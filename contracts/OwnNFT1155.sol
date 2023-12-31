@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./common/ERC2981.sol";
 
 
-contract collection1155 is
+contract CyberpunksNFTUser1155Token is
     Context,
     ERC1155Burnable,
     ERC1155Supply,
@@ -23,7 +23,7 @@ contract collection1155 is
     mapping(uint256 => string) private _tokenURIs;
 
     // Create a new role identifier for the minter role
-    bytes32 public constant ADMIN_ROLE = keccak256(ADMIN_ROLE);
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
 
     struct Sign {

@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./common/ERC2981.sol";
 
-contract ERC721 is
+contract CyberpunksERC721 is
     Context,
     ERC721Enumerable,
     ERC721Burnable,
@@ -42,23 +42,23 @@ contract ERC721 is
     ) ERC721(name, symbol) {
         baseTokenURI = _baseTokenURI;
         owner = _msgSender();
-        _setupRole(ADMIN_ROLE, msg.sender);
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _tokenIdTracker.increment();
     }
 
     function transferOwnership(address newOwner)
         external
-        onlyRole(ADMIN_ROLE)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (bool)
     {
         require(
             newOwner != address(0),
             "Ownable: new owner is the zero address"
         );
-        _revokeRole(ADMIN_ROLE, owner);
+        _revokeRole(DEFAULT_ADMIN_ROLE, owner);
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
-        _setupRole(ADMIN_ROLE, newOwner);
+        _setupRole(DEFAULT_ADMIN_ROLE, newOwner);
         return true;
     }
 
@@ -66,7 +66,7 @@ contract ERC721 is
         return _baseURI();
     }
 
-    function setBaseURI(string memory _baseTokenURI) external onlyRole(ADMIN_ROLE) {
+    function setBaseURI(string memory _baseTokenURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
         baseTokenURI = _baseTokenURI;
     }
 

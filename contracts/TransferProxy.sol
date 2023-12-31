@@ -14,9 +14,9 @@ contract TransferProxy is AccessControl, ITransferProxy {
     address public owner;
     address public operator;
     // Create a new role identifier for the minter role
-    bytes32 public constant ADMIN_ROLE = keccak256(ADMIN_ROLE);
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     // Create a new role identifier for the minter role
-    bytes32 public constant OPERATOR_ROLE = keccak256(OPERATOR_ROLE);
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     constructor() {
         owner = msg.sender;

@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./common/ERC2981.sol";
 
-contract collection721 is
+contract CyberpunksNFTUser721Token is
     Context,
     ERC721Enumerable,
     ERC721Burnable,
@@ -23,7 +23,7 @@ contract collection721 is
     address public owner;
 
     // Create a new role identifier for the minter role
-    bytes32 public constant ADMIN_ROLE = keccak256(ADMIN_ROLE);
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     struct Sign {
         uint8 v;

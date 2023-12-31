@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import "./collection1155.sol";
+import "./OwnNFT1155.sol";
 
 contract ownCollection1155 {
     event Deployed(address owner, address contractAddress);

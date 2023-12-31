@@ -42,7 +42,7 @@ contract Trade is AccessControl {
     mapping(uint256 => bool) private usedNonce;
 
     // Create a new role identifier for the minter role
-    bytes32 public constant ADMIN_ROLE = keccak256(ADMIN_ROLE);
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     /** Fee Struct
         @param platformFee  uint256 (buyerFee + sellerFee) value which is transferred to current contract owner.
