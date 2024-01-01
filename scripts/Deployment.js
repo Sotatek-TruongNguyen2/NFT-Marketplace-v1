@@ -33,12 +33,19 @@ async function main() {
     abi: JSON.parse(proxy.interface.format('json'))
   }
 
-  fs.writeFileSync('./Proxy.json', JSON.stringify(ProxyContestdata))
+  fs.writeFileSync('./Proxy-abi.json', JSON.stringify(ProxyContestdata))
 
   // NFT721
   const erc721 = await ERC721.deploy(NFT721name,NFT721symbol,tokenURIPrefix);
   await erc721.deployed();
   console.log("ERC721", erc721.address);
+
+  const ERC721Contestdata = {
+    address: erc721.address,
+    abi: JSON.parse(erc721.interface.format('json'))
+  }
+
+  fs.writeFileSync('./erc721-abi.json', JSON.stringify(ERC721Contestdata))
 
 
   // NFT1155
@@ -51,7 +58,7 @@ async function main() {
     abi: JSON.parse(erc1155.interface.format('json'))
   }
 
-  fs.writeFileSync('./ERC1155.json', JSON.stringify(ERC1155Contestdata))
+  fs.writeFileSync('./ERC1155-abi.json', JSON.stringify(ERC1155Contestdata))
 
 
   // trade
@@ -65,7 +72,7 @@ async function main() {
     abi: JSON.parse(trade.interface.format('json'))
   }
 
-  fs.writeFileSync('./trade.json', JSON.stringify(TradeContestdata))
+  fs.writeFileSync('./trade-abi.json', JSON.stringify(TradeContestdata))
 
 
   // Factory721
@@ -78,7 +85,7 @@ async function main() {
     abi: JSON.parse(factory721.interface.format('json'))
   }
 
-  fs.writeFileSync('./factory721.json', JSON.stringify(Factory721Contestdata))
+  fs.writeFileSync('./factory721-abi.json', JSON.stringify(Factory721Contestdata))
 
   // Factory1155
   const factory1155 = await Factory1155.deploy()
@@ -91,7 +98,7 @@ async function main() {
     abi: JSON.parse(factory1155.interface.format('json'))
   }
 
-  fs.writeFileSync('./factory1155.json', JSON.stringify(Factory1155Contestdata))
+  fs.writeFileSync('./factory1155-abi.json', JSON.stringify(Factory1155Contestdata))
 
   let nft721Address = '/Deployed contract address/'
   let nft1155Address = '/Deployed contract address/'
