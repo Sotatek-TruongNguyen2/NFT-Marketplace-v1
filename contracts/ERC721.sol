@@ -1,25 +1,28 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.21;
+pragma solidity ^0.8.21;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Pausable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./common/ERC2981.sol";
 
-contract CyberpunksERC721 is
-    Context,
+contract NFTCon is Context,
     ERC721Enumerable,
     ERC721Burnable,
     ERC721URIStorage,
     ERC2981,
     AccessControl
-{
+    {
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+
+    string private baseTokenURI;
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIdTracker;
-    string private baseTokenURI;
     address public owner;
     mapping(uint256 => bool) private usedNonce;
 
@@ -35,31 +38,53 @@ contract CyberpunksERC721 is
         address indexed newOwner
     );
 
-    constructor(
-        string memory name,
-        string memory symbol,
-        string memory _baseTokenURI
-    ) ERC721(name, symbol) {
+
+    constructor(string memory name, string memory symbol, 
+        string memory _baseTokenURI)
+        ERC721(name, symbol) {
+
         baseTokenURI = _baseTokenURI;
         owner = _msgSender();
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _tokenIdTracker.increment();
-    }
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
+        _grantRole(MINTER_ROLE, msg.sender);
 
+    } 
     function transferOwnership(address newOwner)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
         returns (bool)
-    {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
-        _revokeRole(DEFAULT_ADMIN_ROLE, owner);
-        emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
-        _setupRole(DEFAULT_ADMIN_ROLE, newOwner);
-        return true;
+        {
+            require(
+                newOwner != address(0),
+                "Ownable: new owner is the zero address"
+            );
+            _revokeRole(DEFAULT_ADMIN_ROLE, owner);
+            emit OwnershipTransferred(owner, newOwner);
+            owner = newOwner;
+            _setupRole(DEFAULT_ADMIN_ROLE, newOwner);
+            return true;
+    }
+
+    function pause() public onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() public onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+
+    function mint(address user, Sign calldata sign) public onlyRole(MINTER_ROLE) returns (uint256) {
+        require(!usedNonce[sign.nonce], "Nonce : Invalid Nonce");
+        usedNonce[sign.nonce] = true;
+        verifySign(_tokenURI, msg.sender, sign);
+        _tokenId = _tokenIdTracker.current();        
+        _safeMint(user, _tokenId);
+        _setTokenURI(_tokenId, _tokenURI);
+        _setTokenRoyalty(_tokenId, _msgSender(), _royaltyFee);
+        _tokenIdTracker.increment();
+        return _tokenId;
     }
 
     function baseURI() external view returns (string memory) {
@@ -70,30 +95,29 @@ contract CyberpunksERC721 is
         baseTokenURI = _baseTokenURI;
     }
 
-    function mint(
-        string memory _tokenURI,
-        uint96 _royaltyFee,
-        Sign calldata sign
-    ) external virtual returns (uint256 _tokenId) {
-        // We cannot just use balanceOf to create the new tokenId because tokens
-        // can be burned (destroyed), so we need a separate counter.
-        require(!usedNonce[sign.nonce], "Nonce : Invalid Nonce");
-        usedNonce[sign.nonce] = true;
-        verifySign(_tokenURI, msg.sender, sign);
-        _tokenId = _tokenIdTracker.current();
-        _mint(_msgSender(), _tokenId);
-        _setTokenURI(_tokenId, _tokenURI);
-        _setTokenRoyalty(_tokenId, _msgSender(), _royaltyFee);
-        _tokenIdTracker.increment();
-        return _tokenId;
+    function setTokenURI(uint256 tokenId, string memory _tokenURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setTokenURI(tokenId, _tokenURI);
     }
 
-    function _burn(uint256 tokenId)
+    // The following functions are overrides required by Solidity.
+
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseTokenURI;
+    }
+
+    function _update(address to, uint256 tokenId, address auth)
         internal
-        override(ERC721, ERC721URIStorage)
+        override(ERC721, ERC721Enumerable, ERC721Pausable)
+        returns (address)
     {
-        _resetTokenRoyalty(tokenId);
-        super._burn(tokenId);
+        return super._update(to, tokenId, auth);
+    }
+    
+    function _increaseBalance(address account, uint128 value)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
+        super._increaseBalance(account, value);
     }
 
     function tokenURI(uint256 tokenId)
@@ -105,53 +129,12 @@ contract CyberpunksERC721 is
         return super.tokenURI(tokenId);
     }
 
-    function _baseURI() internal view override returns (string memory) {
-        return baseTokenURI;
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-
-    /**
-     * @dev See {IERC165-supportsInterface}.
-     */
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        virtual
-        override(ERC721, ERC721Enumerable, ERC2981, AccessControl)
+        override(ERC721, ERC721Enumerable, ERC721URIStorage, AccessControl)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
-    }
-
-    function verifySign(
-        string memory _tokenURI,
-        address caller,
-        Sign memory sign
-    ) internal view {
-        bytes32 hash = keccak256(
-            abi.encodePacked(this, caller, _tokenURI, sign.nonce)
-        );
-        require(
-            owner ==
-                ecrecover(
-                    keccak256(
-                        abi.encodePacked(
-                            "\x19Ethereum Signed Message:\n32",
-                            hash
-                        )
-                    ),
-                    sign.v,
-                    sign.r,
-                    sign.s
-                ),
-            "Owner sign verification failed"
-        );
     }
 }
