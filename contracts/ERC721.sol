@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./common/ERC2981.sol";
 
-contract Lazy_ERC721 is
+contract CyberpunksERC721 is
     Context,
     ERC721Enumerable,
     ERC721Burnable,
@@ -22,11 +22,6 @@ contract Lazy_ERC721 is
     string private baseTokenURI;
     address public owner;
     mapping(uint256 => bool) private usedNonce;
-    address public operator;
-
-    // Create a new role identifier for the minter role
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     struct Sign {
         uint8 v;
@@ -39,36 +34,31 @@ contract Lazy_ERC721 is
         address indexed previousOwner,
         address indexed newOwner
     );
-    event Pack(uint256[] tokenIds);
-    event RemovedFromPack(uint256[] tokenIds);
 
     constructor(
         string memory name,
         string memory symbol,
-        string memory _baseTokenURI,
-        address _operator
+        string memory _baseTokenURI
     ) ERC721(name, symbol) {
         baseTokenURI = _baseTokenURI;
         owner = _msgSender();
-        operator = _operator;
-        _grantRole(ADMIN_ROLE, msg.sender);
-        _grantRole(OPERATOR_ROLE, operator);
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _tokenIdTracker.increment();
     }
 
     function transferOwnership(address newOwner)
         external
-        onlyRole(ADMIN_ROLE)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (bool)
     {
         require(
             newOwner != address(0),
             "Ownable: new owner is the zero address"
         );
-        _revokeRole(ADMIN_ROLE, owner);
-        owner = newOwner;
-        _grantRole(ADMIN_ROLE, newOwner);
+        _revokeRole(DEFAULT_ADMIN_ROLE, owner);
         emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+        _setupRole(DEFAULT_ADMIN_ROLE, newOwner);
         return true;
     }
 
@@ -76,7 +66,7 @@ contract Lazy_ERC721 is
         return _baseURI();
     }
 
-    function setBaseURI(string memory _baseTokenURI) external onlyRole(ADMIN_ROLE) {
+    function setBaseURI(string memory _baseTokenURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
         baseTokenURI = _baseTokenURI;
     }
 
@@ -97,6 +87,7 @@ contract Lazy_ERC721 is
         _tokenIdTracker.increment();
         return _tokenId;
     }
+
     function _burn(uint256 tokenId)
         internal
         override(ERC721, ERC721URIStorage)
