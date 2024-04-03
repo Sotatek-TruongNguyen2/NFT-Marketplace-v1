@@ -2,8 +2,6 @@
 pragma solidity 0.8.21;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -12,8 +10,6 @@ import "./common/ERC2981.sol";
 contract CyberpunksERC721 is
     Context,
     ERC721Enumerable,
-    ERC721Burnable,
-    ERC721URIStorage,
     ERC2981,
     AccessControl
 {
@@ -82,7 +78,6 @@ contract CyberpunksERC721 is
         verifySign(_tokenURI, msg.sender, sign);
         _tokenId = _tokenIdTracker.current();
         _mint(_msgSender(), _tokenId);
-        _setTokenURI(_tokenId, _tokenURI);
         _setTokenRoyalty(_tokenId, _msgSender(), _royaltyFee);
         _tokenIdTracker.increment();
         return _tokenId;
@@ -90,7 +85,7 @@ contract CyberpunksERC721 is
 
     function _burn(uint256 tokenId)
         internal
-        override(ERC721, ERC721URIStorage)
+        override(ERC721)
     {
         _resetTokenRoyalty(tokenId);
         super._burn(tokenId);
@@ -99,7 +94,7 @@ contract CyberpunksERC721 is
     function tokenURI(uint256 tokenId)
         public
         view
-        override(ERC721, ERC721URIStorage)
+        override(ERC721)
         returns (string memory)
     {
         return super.tokenURI(tokenId);
@@ -113,7 +108,7 @@ contract CyberpunksERC721 is
         address from,
         address to,
         uint256 tokenId
-    ) internal virtual override(ERC721, ERC721Enumerable) {
+    ) internal virtual override(ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
@@ -124,7 +119,7 @@ contract CyberpunksERC721 is
         public
         view
         virtual
-        override(ERC721, ERC721Enumerable, ERC2981, AccessControl)
+        override(ERC721Enumerable, ERC2981, AccessControl)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
